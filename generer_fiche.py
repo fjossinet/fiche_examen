@@ -46,16 +46,21 @@ def draw_binary_row(c, x, y, n_bits):
 
 
 def draw_digit_grid(c, x, y, n_digits, label):
-    """Grille décimale : n_digits colonnes de 10 cases (0 en haut, 9 en bas)."""
+    """Grille décimale : n_digits colonnes de 10 cases, chaque ligne
+    étiquetée par son chiffre (0 en haut, 9 en bas) à gauche des cases."""
     c.setFont("Helvetica-Bold", 9)
     c.setFillGray(0)
     c.drawString(x, y + 10 * DGAP_Y + 8, label)
     c.setStrokeGray(0.4)
     c.setLineWidth(0.6)
-    for d in range(n_digits):
-        cx = x + d * DGAP_X
-        for v in range(10):
-            c.rect(cx, y + (9 - v) * DGAP_Y, DBOX, DBOX, fill=0, stroke=1)
+    for v in range(10):
+        yy = y + (9 - v) * DGAP_Y
+        c.setFont("Helvetica", 6)
+        c.setFillGray(0.35)
+        c.drawRightString(x - 4, yy + DBOX / 2 - 2, str(v))
+        c.setFillGray(0)
+        for d in range(n_digits):
+            c.rect(x + d * DGAP_X, yy, DBOX, DBOX, fill=0, stroke=1)
     return (x, y, x + (n_digits - 1) * DGAP_X + DBOX, y + 10 * DGAP_Y)
 
 
