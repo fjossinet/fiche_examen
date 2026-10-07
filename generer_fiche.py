@@ -34,20 +34,13 @@ def draw_fiducial(c, x, y):
     c.rect(x - FID_SIZE / 2, y - FID_SIZE / 2, FID_SIZE, FID_SIZE, fill=1, stroke=0)
 
 
-def draw_binary_row(c, x, y, n_bits, label):
+def draw_binary_row(c, x, y, n_bits):
     """Rangée binaire : case de rang n (gauche -> droite) vaut 2^n si noircie."""
-    c.setFont("Helvetica-Bold", 9)
-    c.setFillGray(0)
-    c.drawString(x, y + BOX + 8, label)
-    c.setFont("Helvetica", 5)
     for n in range(n_bits):
         cx = x + n * GAP_X
         c.setStrokeGray(0.4)
         c.setLineWidth(0.7)
         c.rect(cx, y, BOX, BOX, fill=0, stroke=1)
-        c.setFillGray(0.35)
-        c.drawCentredString(cx + BOX / 2, y - 8, str(2 ** n))
-        c.setFillGray(0)
     return (x, y, x + (n_bits - 1) * GAP_X + BOX, y + BOX)
 
 
@@ -74,21 +67,25 @@ def generate(path="fiche_reponse.pdf"):
     # --- Zone sujet : 10 cases binaires ---
     sujet_x = 60.0
     sujet_y = PAGE_H - 160.0
-    draw_binary_row(c, sujet_x, sujet_y, N_SUJET_BITS, "SUJET (binaire, 0-999)")
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillGray(0)
+    c.drawString(sujet_x, sujet_y + BOX + 8, "SUJET")
+    draw_binary_row(c, sujet_x, sujet_y, N_SUJET_BITS)
 
-    # --- Zone anonymat : 20 cases binaires ---
+    # --- Zone numéro étudiant : 20 cases binaires ---
     anon_x = 60.0
     anon_y = sujet_y - 60.0
-    draw_binary_row(c, anon_x, anon_y, N_ANON_BITS, "ANONYMAT (binaire, 0-999999)")
+    c.drawString(anon_x, anon_y + BOX + 8, "NUMERO ETUDIANT")
+    draw_binary_row(c, anon_x, anon_y, N_ANON_BITS)
 
     # --- Zone QCM : 20 questions x 5 options ---
     qcm_top = anon_y - 50.0
     qcm_left = 60.0
     letters = ["A", "B", "C", "D", "E"]
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(qcm_left, qcm_top + 5, "REPONSES (une case par question)")
+    c.drawString(qcm_left, qcm_top, "REPONSES (une case par question)")
     for i, L in enumerate(letters):
-        c.drawCentredString(qcm_left + 55 + i * OPT_W, qcm_top + 5, L)
+        c.drawCentredString(qcm_left + 55 + i * OPT_W, qcm_top - 12, L)
 
     row_h = 22.0
     for q in range(20):

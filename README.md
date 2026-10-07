@@ -7,11 +7,12 @@ alimenter un projet de visualisation de résultats.
 
 - **4 repères noirs** aux coins : calibration / correction de perspective
 - **Sujet** : 1 rangée de 10 cases binaire — la case de rang n (de gauche à droite) vaut 2^n si noircie (0–999)
-- **Anonymat** : 1 rangée de 20 cases binaire (0–999 999)
+- **Numéro étudiant** : 1 rangée de 20 cases binaire (0–999 999)
 - **QCM** : 20 questions × 5 options (A–E)
 
 Les réponses QCM sont noircies au stylo noir. Pour les numéros, la valeur est
-la somme des poids 2^n des cases noircies (poids imprimé sous chaque case).
+la somme des poids 2^n des cases noircies (les poids ne sont pas imprimés sur
+la fiche ; rang 1 = 2^n en partant de la gauche).
 
 ## Contenu
 
