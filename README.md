@@ -7,12 +7,12 @@ alimenter un projet de visualisation de résultats.
 
 - **4 repères noirs** aux coins : calibration / correction de perspective
 - **Sujet** : 1 rangée de 10 cases binaire — la case de rang n (de gauche à droite) vaut 2^n si noircie (0–999)
-- **Numéro étudiant** : 1 rangée de 20 cases binaire (0–999 999)
+- **Numéro étudiant** : 8 chiffres décimaux — grille de 8 colonnes × 10 lignes (0 à 9), une case cochée par colonne
 - **QCM** : 20 questions × 5 options (A–E)
 
-Les réponses QCM sont noircies au stylo noir. Pour les numéros, la valeur est
-la somme des poids 2^n des cases noircies (les poids ne sont pas imprimés sur
-la fiche ; rang 1 = 2^n en partant de la gauche).
+Les réponses QCM sont noircies au stylo noir. Le sujet est encodé en binaire
+(somme des poids 2^n des cases noircies, en partant de la gauche) ; le numéro
+étudiant est décimal (une case cochée par colonne de la grille).
 
 ## Contenu
 
@@ -48,8 +48,9 @@ la fiche ; rang 1 = 2^n en partant de la gauche).
 - `DARK_LEVEL` : seuil « case cochée » ; à ajuster selon stylo et éclairage.
 - `sensor.set_framesize` : VGA par défaut ; passer à `sensor.HD` si plus de
   finesse nécessaire (la H7 le supporte).
-- Le terminal affiche aussi le motif binaire lu (liste de 0/1) pour vérifier
-  la lecture de chaque rangée.
+- Le terminal affiche aussi le motif binaire du sujet (liste de 0/1) pour
+  vérifier la lecture. Un numéro étudiant avec une colonne vide ou ambiguë
+  est signalé `<invalide>`.
 
 ## Étapes suivantes possibles
 

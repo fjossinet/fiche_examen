@@ -1,9 +1,7 @@
 # Fiche réponse — OpenMV H7
-# Lecture binaire : sujet (10 bits), anonymat (20 bits), QCM 20x5.
+# Lecture : sujet binaire (10 cases, 2^n), numéro étudiant décimal
+# (8 chiffres, une case cochée par colonne), QCM 20x5.
 # Affichage dans l'IDE OpenMV (frame buffer + terminal).
-#
-# Encodage : une rangée de cases ; la case de rang n (de gauche à droite)
-# vaut 2^n si noircie. Le numéro est la somme des poids des cases noircies.
 #
 # Principe de lecture :
 #   1. détection des 4 repères carrés noirs aux coins
@@ -18,20 +16,19 @@ FID = {"tl": (30.0, PAGE_H - 30.0), "tr": (565.0, PAGE_H - 30.0),
        "bl": (30.0, 30.0), "br": (565.0, 30.0)}
 
 BOX = 14.0
-GAP_X = 18.0      # écart entre cases binaires
 OPT_W = 16.0      # largeur colonne option QCM
 
 N_SUJET_BITS = 10
-N_ANON_BITS = 20
+N_ETU_DIGITS = 8
 N_QUEST = 20
 N_OPTS = 5
 
 SUJET_X = 60.0
 SUJET_Y = PAGE_H - 160.0          # y (bas) de la rangée sujet
-ANON_X = 60.0
-ANON_Y = SUJET_Y - 60.0
+ETU_X = 60.0
+ETU_Y = SUJET_Y - 170.0           # y (bas) de la grille numéro étudiant
 QCM_LEFT = 60.0
-QCM_TOP = ANON_Y - 50.0
+QCM_TOP = ETU_Y - 40.0
 ROW_H = 22.0
 
 DARK_LEVEL = 90    # moyenne ROI sous ce niveau (0-255) = case noircie
@@ -91,10 +88,10 @@ def apply_h(h, x, y):
     return (h[0] * x + h[1] * y + h[2]) / d, (h[3] * x + h[4] * y + h[5]) / d
 
 
-def box_dark(img, h, x, y):
+def box_dark(img, h, x, y, box):
     """True si la case de coin bas-gauche fiche (x,y) est noircie."""
-    u, w = apply_h(h, x + BOX / 2, y + BOX / 2)
-    roi = (int(u - 5), int(w - 5), 10, 10)
+    u, w = apply_h(h, x + box / 2, y + box / 2)
+    roi = (int(u - 4), int(w - 4), 8, 8)
     return img.get_statistics(roi=roi).mean() < DARK_LEVEL
 
 
@@ -103,12 +100,32 @@ def read_binary(img, h, x0, y0, n_bits):
     val = 0
     bits = []
     for n in range(n_bits):
-        if box_dark(img, h, x0 + n * GAP_X, y0):
+        if box_dark(img, h, x0 + n * 18.0, y0, 14.0):
             val += 2 ** n
             bits.append(1)
         else:
             bits.append(0)
     return val, bits
+
+
+def read_digits(img, h, x0, y0, n_digits):
+    """Lit une grille décimale : une case 0-9 cochée par colonne.
+    Retourne le nombre (int) ou None si une colonne est vide/ambiguë."""
+    DBOX, DGAP_X, DGAP_Y = 10.0, 14.0, 12.0
+    s = ""
+    for d in range(n_digits):
+        cx = x0 + d * DGAP_X
+        digit = None
+        for v in range(10):
+            if box_dark(img, h, cx, y0 + (9 - v) * DGAP_Y, DBOX):
+                if digit is None:
+                    digit = v
+                else:
+                    digit = -1      # plusieurs cases -> colonne invalide
+        if digit is None or digit < 0:
+            return None
+        s += str(digit)
+    return int(s)
 
 
 def read_qcm(img, h):
@@ -119,7 +136,7 @@ def read_qcm(img, h):
         checked = []
         for i in range(N_OPTS):
             bx = QCM_LEFT + 55 + i * OPT_W
-            if box_dark(img, h, bx, yy):
+            if box_dark(img, h, bx, yy, BOX):
                 checked.append("ABCDE"[i])
         res[q + 1] = checked
     return res
@@ -136,12 +153,12 @@ while True:
         h = homography(src, dst)
         if h:
             sujet, s_bits = read_binary(img, h, SUJET_X, SUJET_Y, N_SUJET_BITS)
-            anon, a_bits = read_binary(img, h, ANON_X, ANON_Y, N_ANON_BITS)
+            etu = read_digits(img, h, ETU_X, ETU_Y, N_ETU_DIGITS)
             qcm = read_qcm(img, h)
 
             print("---- FICHE ----")
             print("Sujet    : %d  (bits %s)" % (sujet, s_bits))
-            print("Anonymat : %d  (bits %s)" % (anon, a_bits))
+            print("Numero etudiant : %s" % (etu if etu is not None else "<invalide>"))
             for q in sorted(qcm):
                 if qcm[q]:
                     print("Q%02d -> %s" % (q, ",".join(qcm[q])))

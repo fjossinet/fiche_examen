@@ -12,9 +12,12 @@ from reportlab.pdfgen import canvas
 
 PAGE_W, PAGE_H = A4  # 595 x 842 pt
 
-BOX = 14.0        # taille d'une case (pt)
-GAP_X = 18.0      # écart horizontal entre cases binaires
+BOX = 14.0        # taille d'une case QCM (pt)
 OPT_W = 16.0      # largeur colonne option QCM
+
+DBOX = 10.0       # taille d'une case chiffre (plus petite)
+DGAP_X = 14.0     # écart horizontal entre colonnes de chiffres
+DGAP_Y = 12.0     # écart vertical entre rangées de chiffres
 
 # Coordonnées des repères de coin (centres), en points
 FID = {
@@ -25,8 +28,8 @@ FID = {
 }
 FID_SIZE = 16.0
 
-N_SUJET_BITS = 10   # 0..999
-N_ANON_BITS = 20     # 0..999999
+N_SUJET_BITS = 10   # sujet binaire : 0..999
+N_ETU_DIGITS = 8    # numéro étudiant décimal : 8 chiffres
 
 
 def draw_fiducial(c, x, y):
@@ -36,12 +39,24 @@ def draw_fiducial(c, x, y):
 
 def draw_binary_row(c, x, y, n_bits):
     """Rangée binaire : case de rang n (gauche -> droite) vaut 2^n si noircie."""
+    c.setStrokeGray(0.4)
+    c.setLineWidth(0.7)
     for n in range(n_bits):
-        cx = x + n * GAP_X
-        c.setStrokeGray(0.4)
-        c.setLineWidth(0.7)
-        c.rect(cx, y, BOX, BOX, fill=0, stroke=1)
-    return (x, y, x + (n_bits - 1) * GAP_X + BOX, y + BOX)
+        c.rect(x + n * 18.0, y, BOX, BOX, fill=0, stroke=1)
+
+
+def draw_digit_grid(c, x, y, n_digits, label):
+    """Grille décimale : n_digits colonnes de 10 cases (0 en haut, 9 en bas)."""
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillGray(0)
+    c.drawString(x, y + 10 * DGAP_Y + 8, label)
+    c.setStrokeGray(0.4)
+    c.setLineWidth(0.6)
+    for d in range(n_digits):
+        cx = x + d * DGAP_X
+        for v in range(10):
+            c.rect(cx, y + (9 - v) * DGAP_Y, DBOX, DBOX, fill=0, stroke=1)
+    return (x, y, x + (n_digits - 1) * DGAP_X + DBOX, y + 10 * DGAP_Y)
 
 
 def draw_box(c, x, y, w, h):
@@ -72,14 +87,13 @@ def generate(path="fiche_reponse.pdf"):
     c.drawString(sujet_x, sujet_y + BOX + 8, "SUJET")
     draw_binary_row(c, sujet_x, sujet_y, N_SUJET_BITS)
 
-    # --- Zone numéro étudiant : 20 cases binaires ---
-    anon_x = 60.0
-    anon_y = sujet_y - 60.0
-    c.drawString(anon_x, anon_y + BOX + 8, "NUMERO ETUDIANT")
-    draw_binary_row(c, anon_x, anon_y, N_ANON_BITS)
+    # --- Zone numéro étudiant : 8 chiffres décimaux ---
+    etu_x = 60.0
+    etu_y = sujet_y - 170.0            # bas de la grille
+    draw_digit_grid(c, etu_x, etu_y, N_ETU_DIGITS, "NUMERO ETUDIANT")
 
     # --- Zone QCM : 20 questions x 5 options ---
-    qcm_top = anon_y - 50.0
+    qcm_top = etu_y - 40.0
     qcm_left = 60.0
     letters = ["A", "B", "C", "D", "E"]
     c.setFont("Helvetica-Bold", 9)
