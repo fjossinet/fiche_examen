@@ -1,7 +1,6 @@
 # Fiche réponse — OpenMV H7
 
-Lecture automatique de fiches réponse d'examen par caméra OpenMV H7, pour
-alimenter un projet de visualisation de résultats.
+Lecture automatique de fiches réponse d'examen par caméra OpenMV H7.
 
 ## Structure de la fiche (A4)
 
@@ -55,5 +54,4 @@ Les réponses QCM sont noircies au stylo noir. Le sujet est encodé en binaire
 ## Étapes suivantes possibles
 
 - Export des résultats sur carte SD (CSV/JSON) ou en UART.
-- Liaison avec le projet de visualisation ARN.
 - Anti-fraude : détection de ratures (plusieurs cases par question).
