@@ -20,7 +20,9 @@ OPT_W = 16.0      # largeur colonne option QCM
 
 N_SUJET_BITS = 10
 N_ETU_DIGITS = 8
-N_QUEST = 20
+N_QUEST = 30
+N_QUEST_PER_COL = 15
+COL2_LEFT = 300.0
 N_OPTS = 5
 
 SUJET_X = 60.0
@@ -131,13 +133,15 @@ def read_digits(img, h, x0, y0, n_digits):
 
 
 def read_qcm(img, h):
-    """Retourne {question: [options cochées]}."""
+    """Retourne {question: [options cochées]} sur 2 colonnes de 15."""
     res = {}
     for q in range(N_QUEST):
-        yy = QCM_TOP - 32 - q * ROW_H
+        col, row = divmod(q, N_QUEST_PER_COL)
+        cx = QCM_LEFT if col == 0 else COL2_LEFT
+        yy = QCM_TOP - 32 - row * ROW_H
         checked = []
         for i in range(N_OPTS):
-            bx = QCM_LEFT + 55 + i * OPT_W
+            bx = cx + 55 + i * OPT_W
             if box_dark(img, h, bx, yy, BOX):
                 checked.append("ABCDE"[i])
         res[q + 1] = checked

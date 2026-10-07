@@ -8,7 +8,7 @@ alimenter un projet de visualisation de résultats.
 - **4 repères noirs** aux coins : calibration / correction de perspective
 - **Sujet** : 1 rangée de 10 cases binaire — la case de rang n (de gauche à droite) vaut 2^n si noircie (0–999)
 - **Numéro étudiant** : 8 chiffres décimaux — grille de 8 colonnes × 10 lignes (0 à 9), une case cochée par colonne
-- **QCM** : 20 questions × 5 options (A–E)
+- **QCM** : 30 questions × 5 options (A–E), en 2 colonnes de 15
 
 Les réponses QCM sont noircies au stylo noir. Le sujet est encodé en binaire
 (somme des poids 2^n des cases noircies, en partant de la gauche) ; le numéro

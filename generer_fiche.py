@@ -96,23 +96,27 @@ def generate(path="fiche_reponse.pdf"):
     etu_y = sujet_y - 170.0            # bas de la grille
     draw_digit_grid(c, etu_x, etu_y, N_ETU_DIGITS, "NUMERO ETUDIANT")
 
-    # --- Zone QCM : 20 questions x 5 options ---
+    # --- Zone QCM : 30 questions, 2 colonnes de 15 ---
     qcm_top = etu_y - 40.0
     qcm_left = 60.0
+    col2_left = 300.0
     letters = ["A", "B", "C", "D", "E"]
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(qcm_left, qcm_top, "REPONSES")
-    for i, L in enumerate(letters):
-        c.drawCentredString(qcm_left + 55 + i * OPT_W + BOX / 2, qcm_top - 12, L)
+    for cx in (qcm_left, col2_left):
+        c.drawString(cx, qcm_top, "REPONSES")
+        for i, L in enumerate(letters):
+            c.drawCentredString(cx + 55 + i * OPT_W + BOX / 2, qcm_top - 12, L)
 
     row_h = 22.0
-    for q in range(20):
-        yy = qcm_top - 32 - q * row_h
+    for q in range(30):
+        col, row = divmod(q, 15)
+        cx = qcm_left if col == 0 else col2_left
+        yy = qcm_top - 32 - row * row_h
         c.setFont("Helvetica", 8)
         c.setFillGray(0)
-        c.drawString(qcm_left, yy + 4, f"Q{q + 1:02d}")
+        c.drawString(cx, yy + 4, f"Q{q + 1:02d}")
         for i in range(5):
-            bx = qcm_left + 55 + i * OPT_W
+            bx = cx + 55 + i * OPT_W
             draw_box(c, bx, yy, BOX, BOX)
 
     c.showPage()
