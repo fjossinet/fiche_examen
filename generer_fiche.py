@@ -62,7 +62,7 @@ def generate(path="fiche_reponse.pdf"):
     c.drawCentredString(PAGE_W / 2, PAGE_H - 55, "FICHE REPONSE")
     c.setFont("Helvetica", 8)
     c.drawCentredString(PAGE_W / 2, PAGE_H - 68,
-                        "Noircir au stylo noir les cases choisies (encodage binaire)")
+                        "Noircir au stylo noir les cases choisies")
 
     # --- Zone sujet : 10 cases binaires ---
     sujet_x = 60.0
