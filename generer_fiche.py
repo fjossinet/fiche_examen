@@ -89,7 +89,7 @@ def generate(path="fiche_reponse.pdf"):
 
     row_h = 22.0
     for q in range(20):
-        yy = qcm_top - 14 - q * row_h
+        yy = qcm_top - 32 - q * row_h
         c.setFont("Helvetica", 8)
         c.setFillGray(0)
         c.drawString(qcm_left, yy + 4, f"Q{q + 1:02d}")

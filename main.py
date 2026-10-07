@@ -115,7 +115,7 @@ def read_qcm(img, h):
     """Retourne {question: [options cochées]}."""
     res = {}
     for q in range(N_QUEST):
-        yy = QCM_TOP - 14 - q * ROW_H
+        yy = QCM_TOP - 32 - q * ROW_H
         checked = []
         for i in range(N_OPTS):
             bx = QCM_LEFT + 55 + i * OPT_W
