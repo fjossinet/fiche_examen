@@ -101,7 +101,7 @@ def generate(path="fiche_reponse.pdf"):
     qcm_left = 60.0
     letters = ["A", "B", "C", "D", "E"]
     c.setFont("Helvetica-Bold", 9)
-    c.drawString(qcm_left, qcm_top, "REPONSES (une case par question)")
+    c.drawString(qcm_left, qcm_top, "REPONSES")
     for i, L in enumerate(letters):
         c.drawCentredString(qcm_left + 55 + i * OPT_W + BOX / 2, qcm_top - 12, L)
 
