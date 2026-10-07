@@ -40,9 +40,9 @@ def draw_fiducial(c, x, y):
 def draw_binary_row(c, x, y, n_bits):
     """Rangée binaire : case de rang n (gauche -> droite) vaut 2^n si noircie."""
     c.setStrokeGray(0.4)
-    c.setLineWidth(0.7)
+    c.setLineWidth(0.6)
     for n in range(n_bits):
-        c.rect(x + n * 18.0, y, BOX, BOX, fill=0, stroke=1)
+        c.rect(x + n * 14.0, y, DBOX, DBOX, fill=0, stroke=1)
 
 
 def draw_digit_grid(c, x, y, n_digits, label):
@@ -88,7 +88,7 @@ def generate(path="fiche_reponse.pdf"):
     sujet_y = PAGE_H - 160.0
     c.setFont("Helvetica-Bold", 9)
     c.setFillGray(0)
-    c.drawString(sujet_x, sujet_y + BOX + 8, "SUJET")
+    c.drawString(sujet_x, sujet_y + DBOX + 8, "SUJET")
     draw_binary_row(c, sujet_x, sujet_y, N_SUJET_BITS)
 
     # --- Zone numéro étudiant : 8 chiffres décimaux ---

@@ -89,9 +89,11 @@ def apply_h(h, x, y):
 
 
 def box_dark(img, h, x, y, box):
-    """True si la case de coin bas-gauche fiche (x,y) est noircie."""
+    """True si la case de coin bas-gauche fiche (x,y) est noircie.
+    ROI 8x8 px pour les petites cases (10 pt), 10x10 pour les QCM (14 pt)."""
     u, w = apply_h(h, x + box / 2, y + box / 2)
-    roi = (int(u - 4), int(w - 4), 8, 8)
+    half = 5 if box >= 14.0 else 4
+    roi = (int(u - half), int(w - half), half * 2, half * 2)
     return img.get_statistics(roi=roi).mean() < DARK_LEVEL
 
 
@@ -100,7 +102,7 @@ def read_binary(img, h, x0, y0, n_bits):
     val = 0
     bits = []
     for n in range(n_bits):
-        if box_dark(img, h, x0 + n * 18.0, y0, 14.0):
+        if box_dark(img, h, x0 + n * 14.0, y0, 10.0):
             val += 2 ** n
             bits.append(1)
         else:
