@@ -6,11 +6,12 @@ alimenter un projet de visualisation de résultats.
 ## Structure de la fiche (A4)
 
 - **4 repères noirs** aux coins : calibration / correction de perspective
-- **Sujet** : 3 chiffres (0–9)
-- **Anonymat** : 6 chiffres (0–9)
+- **Sujet** : 1 rangée de 10 cases binaire — la case de rang n (de gauche à droite) vaut 2^n si noircie (0–999)
+- **Anonymat** : 1 rangée de 20 cases binaire (0–999 999)
 - **QCM** : 20 questions × 5 options (A–E)
 
-Les réponses sont noircies au stylo noir.
+Les réponses QCM sont noircies au stylo noir. Pour les numéros, la valeur est
+la somme des poids 2^n des cases noircies (poids imprimé sous chaque case).
 
 ## Contenu
 
@@ -46,7 +47,8 @@ Les réponses sont noircies au stylo noir.
 - `DARK_LEVEL` : seuil « case cochée » ; à ajuster selon stylo et éclairage.
 - `sensor.set_framesize` : VGA par défaut ; passer à `sensor.HD` si plus de
   finesse nécessaire (la H7 le supporte).
-- Un chiffre avec plusieurs cases noircies est signalé `-1` (erreur).
+- Le terminal affiche aussi le motif binaire lu (liste de 0/1) pour vérifier
+  la lecture de chaque rangée.
 
 ## Étapes suivantes possibles
 

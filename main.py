@@ -1,44 +1,45 @@
 # Fiche réponse — OpenMV H7
-# Lecture : numéro de sujet (3 chiffres), anonymat (6 chiffres), QCM 20x5.
+# Lecture binaire : sujet (10 bits), anonymat (20 bits), QCM 20x5.
 # Affichage dans l'IDE OpenMV (frame buffer + terminal).
 #
-# Principe :
-#   1. seuillage Otsu -> cases noircies = blobs
-#   2. détection des 4 repères carrés aux coins -> correction de perspective
-#   3. lecture des cases dans des grilles virtuelles ancrées sur les repères
+# Encodage : une rangée de cases ; la case de rang n (de gauche à droite)
+# vaut 2^n si noircie. Le numéro est la somme des poids des cases noircies.
+#
+# Principe de lecture :
+#   1. détection des 4 repères carrés noirs aux coins
+#   2. homographie image -> fiche (coordonnées PDF de la fiche)
+#   3. moyenne de luminosité au centre de chaque case (seuil DARK_LEVEL)
 
-import sensor, image, time, math
+import sensor, image, time
 
 # ----- Dimensions de la fiche (en points PDF, cf. generer_fiche.py) -----
 PAGE_W, PAGE_H = 595.0, 842.0
 FID = {"tl": (30.0, PAGE_H - 30.0), "tr": (565.0, PAGE_H - 30.0),
        "bl": (30.0, 30.0), "br": (565.0, 30.0)}
-FID_SIZE = 16.0
 
 BOX = 14.0
-GAP_X, GAP_Y = 22.0, 20.0
-OPT_W = 16.0
+GAP_X = 18.0      # écart entre cases binaires
+OPT_W = 16.0      # largeur colonne option QCM
 
-N_SUJET = 3      # chiffres sujet
-N_ANON = 6        # chiffres anonymat
+N_SUJET_BITS = 10
+N_ANON_BITS = 20
 N_QUEST = 20
 N_OPTS = 5
 
 SUJET_X = 60.0
-SUJET_Y = PAGE_H - 320.0 - 10 * GAP_Y          # origine basse de la grille chiffres
-ANON_X = SUJET_X + 3 * GAP_X + 60.0
+SUJET_Y = PAGE_H - 160.0          # y (bas) de la rangée sujet
+ANON_X = 60.0
+ANON_Y = SUJET_Y - 60.0
 QCM_LEFT = 60.0
-QCM_TOP = SUJET_Y + 10 * GAP_Y - 50.0           # y (haut) de la zone QCM
+QCM_TOP = ANON_Y - 50.0
 ROW_H = 22.0
 
-FILL_RATIO = 0.35   # fraction de surface noire pour considérer une case cochée
+DARK_LEVEL = 90    # moyenne ROI sous ce niveau (0-255) = case noircie
 
 sensor.reset()
 sensor.set_pixformat(sensor.GRAYSCALE)
 sensor.set_framesize(sensor.VGA)   # 640x480
 sensor.skip_frames(time=1500)
-
-DARK_LEVEL = 90    # moyenne ROI sous ce niveau (0-255) = case noircie
 
 clock = time.clock()
 
@@ -51,25 +52,24 @@ def find_fiducials(img):
         w, h = b.w(), b.h()
         if 0.7 < w / h < 1.4 and b.pixels() > 0.5 * w * h:
             quads.append(b)
-    pts = {}
     if len(quads) < 4:
-        return pts
+        return {}
     quads.sort(key=lambda b: b.cx() + b.cy())      # tl -> br
-    pts["tl"], pts["br"] = quads[0], quads[-1]
+    tl, br = quads[0], quads[-1]
     rest = quads[1:-1]
     rest.sort(key=lambda b: b.cx() - b.cy())       # tr -> bl
-    pts["tr"], pts["bl"] = rest[0], rest[-1]
-    return {k: (v.cx(), v.cy()) for k, v in pts.items()}
+    return {"tl": (tl.cx(), tl.cy()), "br": (br.cx(), br.cy()),
+            "tr": (rest[0].cx(), rest[0].cy()),
+            "bl": (rest[-1].cx(), rest[-1].cy())}
 
 
 def homography(src, dst):
-    """Calcule H (3x3, liste de 9) tel que dst ~ H * src."""
+    """Calcule H (liste de 9) tel que dst ~ H * src."""
     A, b = [], []
     for (x, y), (u, v) in zip(src, dst):
         A.append([x, y, 1, 0, 0, 0, -u * x, -u * y])
         A.append([0, 0, 0, x, y, 1, -v * x, -v * y])
         b += [u, v]
-    # résolution Gauss 8x8
     n = 8
     M = [row + [b[i]] for i, row in enumerate(A)]
     for col in range(n):
@@ -83,8 +83,7 @@ def homography(src, dst):
             if r != col and M[r][col] != 0:
                 f = M[r][col]
                 M[r] = [a - f * c for a, c in zip(M[r], M[col])]
-    h = [M[i][8] for i in range(n)] + [1.0]
-    return h
+    return [M[i][8] for i in range(n)] + [1.0]
 
 
 def apply_h(h, x, y):
@@ -92,25 +91,24 @@ def apply_h(h, x, y):
     return (h[0] * x + h[1] * y + h[2]) / d, (h[3] * x + h[4] * y + h[5]) / d
 
 
-def read_grid(img, h, x0, y0, n_digits, values):
-    """Lit une grille de chiffres : retourne la liste des chiffres (ou None)."""
-    out = []
-    for d in range(n_digits):
-        cx = x0 + d * GAP_X
-        digit = None
-        for v in range(10):
-            # centre de la case valeur v de la colonne d
-            px = cx + BOX / 2
-            py = y0 + (9 - v) * GAP_Y + BOX / 2
-            u, w = apply_h(h, px, py)
-            roi = (int(u - 5), int(w - 5), 10, 10)
-            if img.get_statistics(roi=roi).mean() < DARK_LEVEL:
-                if digit is None:
-                    digit = v
-                else:
-                    digit = -1  # plusieurs cases -> erreur
-        out.append(digit)
-    return out
+def box_dark(img, h, x, y):
+    """True si la case de coin bas-gauche fiche (x,y) est noircie."""
+    u, w = apply_h(h, x + BOX / 2, y + BOX / 2)
+    roi = (int(u - 5), int(w - 5), 10, 10)
+    return img.get_statistics(roi=roi).mean() < DARK_LEVEL
+
+
+def read_binary(img, h, x0, y0, n_bits):
+    """Lit une rangée binaire : case de rang n vaut 2^n si noircie."""
+    val = 0
+    bits = []
+    for n in range(n_bits):
+        if box_dark(img, h, x0 + n * GAP_X, y0):
+            val += 2 ** n
+            bits.append(1)
+        else:
+            bits.append(0)
+    return val, bits
 
 
 def read_qcm(img, h):
@@ -121,10 +119,7 @@ def read_qcm(img, h):
         checked = []
         for i in range(N_OPTS):
             bx = QCM_LEFT + 55 + i * OPT_W
-            px, py = bx + BOX / 2, yy + BOX / 2
-            u, w = apply_h(h, px, py)
-            roi = (int(u - 5), int(w - 5), 10, 10)
-            if img.get_statistics(roi=roi).mean() < DARK_LEVEL:
+            if box_dark(img, h, bx, yy):
                 checked.append("ABCDE"[i])
         res[q + 1] = checked
     return res
@@ -136,22 +131,20 @@ while True:
     fids = find_fiducials(img)
 
     if len(fids) == 4:
-        # repères image -> repères fiche (points PDF)
         src = [fids["tl"], fids["tr"], fids["bl"], fids["br"]]
         dst = [FID["tl"], FID["tr"], FID["bl"], FID["br"]]
         h = homography(src, dst)
         if h:
-            sujet = read_grid(img, h, SUJET_X, SUJET_Y, N_SUJET, 10)
-            anon = read_grid(img, h, ANON_X, SUJET_Y, N_ANON, 10)
+            sujet, s_bits = read_binary(img, h, SUJET_X, SUJET_Y, N_SUJET_BITS)
+            anon, a_bits = read_binary(img, h, ANON_X, ANON_Y, N_ANON_BITS)
             qcm = read_qcm(img, h)
 
             print("---- FICHE ----")
-            print("Sujet    :", sujet)
-            print("Anonymat :", anon)
+            print("Sujet    : %d  (bits %s)" % (sujet, s_bits))
+            print("Anonymat : %d  (bits %s)" % (anon, a_bits))
             for q in sorted(qcm):
                 if qcm[q]:
                     print("Q%02d -> %s" % (q, ",".join(qcm[q])))
-            # dessiner les repères trouvés
             for k, (cx, cy) in fids.items():
                 img.draw_cross(cx, cy, size=10)
     else:
